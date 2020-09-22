@@ -8,7 +8,9 @@ import android.view.View
 import kotlin.math.roundToInt
 import kotlin.properties.Delegates
 
-class CustomCircles(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
+class CustomCircles @JvmOverloads constructor(
+    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
+) : View(context, attrs, defStyleAttr) {
 
 
     private val strikePaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -34,9 +36,14 @@ class CustomCircles(context: Context?, attrs: AttributeSet?) : View(context, att
     private var rectangle: ArrayList<Rect>
 
     init {
+
+        val a=getContext().obtainStyledAttributes(attrs,R.styleable.CustomCircles,defStyleAttr,0)
+        val outlineColor=a.getColor(R.styleable.CustomCircles_outlineColor,Color.BLACK)
+
+        a.recycle()
         strikePaint.style = Paint.Style.STROKE
         strikePaint.strokeWidth = strokeWidth
-        strikePaint.color = Color.BLACK
+        strikePaint.color = outlineColor
 
         fillPaint.style = Paint.Style.FILL
         fillPaint.color = Color.YELLOW

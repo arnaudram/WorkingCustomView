@@ -10,7 +10,7 @@
 
     <com.example.workingcustomview.CustomCircles
         android:id="@+id/customCircles"
-
+  app:outlineColor="#AA00FF"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="2dp"
