@@ -5,7 +5,7 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
-import kotlin.math.roundToInt
+import kotlin.math.*
 import kotlin.properties.Delegates
 
 class CustomCircles @JvmOverloads constructor(
@@ -15,6 +15,11 @@ class CustomCircles @JvmOverloads constructor(
 
     private val strikePaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val fillPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    val pathOne=Path()
+
+    val pathTwo =Path()
+
     var moduleStatus: BooleanArray = BooleanArray(15)
     private val shapeSize = 140f
     private val spacing = 25f
@@ -31,23 +36,29 @@ class CustomCircles @JvmOverloads constructor(
     private var maxRows: Int by Delegates.notNull()
 
     private val exampleModuleStatusSize = 7
-
-
+       private  val shapeDefaultType=0
+    private val shapeType: Int
     private var rectangle: ArrayList<Rect>
+    private lateinit var points: ArrayList<PointF>
 
     init {
 
         val a=getContext().obtainStyledAttributes(attrs,R.styleable.CustomCircles,defStyleAttr,0)
         val outlineColor=a.getColor(R.styleable.CustomCircles_outlineColor,Color.BLACK)
 
+        shapeType = a.getInt(R.styleable.CustomCircles_shapetype,shapeDefaultType)
+
         a.recycle()
         strikePaint.style = Paint.Style.STROKE
         strikePaint.strokeWidth = strokeWidth
+        strikePaint.strokeJoin=Paint.Join.MITER
         strikePaint.color = outlineColor
 
         fillPaint.style = Paint.Style.FILL
         fillPaint.color = Color.YELLOW
         rectangle = arrayListOf()
+        setUpPathPoint()
+
 
         if (isInEditMode) {
             setUpEditModeStatus()
@@ -55,6 +66,20 @@ class CustomCircles @JvmOverloads constructor(
 ////
 
 
+    }
+
+
+
+    private fun setUpPathPoint() {
+        val tetha =(2* PI).div(5)
+
+        points = arrayListOf<PointF>()
+        for (i in 0..5) {
+            val px = r * cos(PI / 2 + (i) * tetha)
+            val py=r* sin(PI / 2 + (i ) * tetha)
+            val pointF=PointF(px.toFloat(),py.toFloat())
+               points.add(pointF)
+        }
     }
 
     private fun setUpEditModeStatus() {
@@ -155,19 +180,76 @@ class CustomCircles @JvmOverloads constructor(
         canvas?.let { canvas: Canvas ->
 
             for (i in 0 until (moduleStatus.size)) {
+                  if (shapeType==shapeDefaultType) {
+                      val cx = rectangle[i].centerX().toFloat()
+                      val cy = rectangle[i].centerY().toFloat()
 
-                val cx = rectangle[i].centerX().toFloat()
-                val cy = rectangle[i].centerY().toFloat()
-
-                if (moduleStatus[i]) {
-                    canvas.drawCircle(cx, cy, r, fillPaint)
-                }
-                canvas.drawCircle(cx, cy, r, strikePaint)
-
+                      if (moduleStatus[i]) {
+                          canvas.drawCircle(cx, cy, r, fillPaint)
+                      }
+                      canvas.drawCircle(cx, cy, r, strikePaint)
+                  }
+                  else{
+                      drawStars(canvas,i)
+                  }
             }
 
 
         }
+    }
+
+    private fun drawStars(canvas: Canvas, i: Int) {
+        val pts= arrayListOf<PointF>()
+        val innerPts= arrayListOf<PointF>()
+        val tetha =(2* PI).div(5)
+
+        val cx = rectangle[i].centerX().toFloat()
+        val cy = rectangle[i].centerY().toFloat()
+        val innerRadius=r*(0.5)*(3- sqrt(5.0))
+        canvas.save()
+        canvas.translate(cx,cy)
+        // val rx=  (r)-cx
+         // val ry=(r)-cy
+      //  val radiusStars= hypot(rx,ry)
+        for (k in 0..5) {
+            val px = r * cos( PI / 2 + (k) * tetha)
+            val py=r* sin( PI / 2 + (k ) * tetha)
+            val pointF=PointF(px.toFloat(),py.toFloat())
+            pts.add(pointF)
+        }
+        for (k in 0..10) {
+            val px = innerRadius * cos(  PI / 2 +(k) * tetha)
+            val py=innerRadius* sin(  PI / 2 +(k ) * tetha)
+            val pointF=PointF(px.toFloat(),py.toFloat())
+            innerPts.add(pointF)
+        }
+
+         pathOne.apply {
+             moveTo(pts[3].x,pts[3].y)
+             lineTo(pts[0].x,pts[0].y)
+             lineTo(pts[2].x,pts[2].y)
+             lineTo(pts[4].x,pts[4].y)
+             lineTo(pts[1].x,pts[1].y)
+             lineTo(pts[3].x,pts[3].y)
+
+
+             close()
+         }
+          /*pathTwo.apply {
+              moveTo(pts[2].x,pts[2].y)
+              lineTo(pts[4].x,pts[4].y)
+              lineTo(pts[1].x,pts[1].y)
+              lineTo(pts[3].x,pts[3].y)
+              close()
+          }
+        pathOne.op(pathTwo,Path.Op.UNION)*/
+
+        if (moduleStatus[i]) {
+           canvas.drawPath(pathOne,fillPaint)
+
+        }
+        canvas.drawPath(pathOne, strikePaint)
+        canvas.restore()
     }
 
 
