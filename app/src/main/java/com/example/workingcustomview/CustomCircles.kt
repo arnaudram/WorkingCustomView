@@ -3,6 +3,7 @@ package com.example.workingcustomview
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import kotlin.math.*
@@ -23,7 +24,7 @@ class CustomCircles @JvmOverloads constructor(
     var moduleStatus: BooleanArray = BooleanArray(15)
     private val shapeSize = 140f
     private val spacing = 25f
-    private val strokeWidth = 8f
+    private val strokeWidth = 2f
 
     private val y1 = paddingTop
     private val x1 = paddingStart
@@ -47,10 +48,10 @@ class CustomCircles @JvmOverloads constructor(
         val outlineColor=a.getColor(R.styleable.CustomCircles_outlineColor,Color.BLACK)
 
         shapeType = a.getInt(R.styleable.CustomCircles_shapetype,shapeDefaultType)
-
+        val outlineStrokeWidth=a.getDimension(R.styleable.CustomCircles_outlineWidth,strokeWidth)
         a.recycle()
         strikePaint.style = Paint.Style.STROKE
-        strikePaint.strokeWidth = strokeWidth
+        strikePaint.strokeWidth = getPixelValueFromDp(outlineStrokeWidth)
         strikePaint.strokeJoin=Paint.Join.MITER
         strikePaint.color = outlineColor
 
@@ -68,6 +69,9 @@ class CustomCircles @JvmOverloads constructor(
 
     }
 
+    private fun getPixelValueFromDp(value: Float): Float {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,value,context.resources.displayMetrics)
+    }
 
 
     private fun setUpPathPoint() {

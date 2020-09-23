@@ -3,8 +3,9 @@
     <declare-styleable name="CustomCircles">
         <attr name="outlineColor" format="color" />
         <attr name="shapetype" format="enum">
-            <enum name="circles" value="0"></enum>
-            <enum name="stars" value="1"></enum>
+            <enum name="circles" value="0" />
+            <enum name="stars" value="1" />
         </attr>
+        <attr name="outlineWidth" format="dimension" />
     </declare-styleable>
 </resources>
