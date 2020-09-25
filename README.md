@@ -1,7 +1,7 @@
 # Working with CustomView
 exploring custom view functionalities.Here is a simple app through which i was learning how to draw with canvas and paint.
 A paint object describes how to draw whereas the canvas is where to draw, just a piece of paper.
-# What does the App features
+# What does the App feature
 Here i have implemented some functionalities like:
 
 - Drawing  a serie of custom circles with spacing between them. 
