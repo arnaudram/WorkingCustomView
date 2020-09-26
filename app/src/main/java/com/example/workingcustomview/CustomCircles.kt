@@ -1,11 +1,18 @@
 package com.example.workingcustomview
 
+import android.app.Notification
 import android.content.Context
 import android.graphics.*
+import android.os.Bundle
 import android.util.AttributeSet
 import android.util.TypedValue
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.view.accessibility.AccessibilityEvent
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
+import androidx.customview.widget.ExploreByTouchHelper
 import kotlin.math.*
 import kotlin.properties.Delegates
 
@@ -41,6 +48,7 @@ class CustomCircles @JvmOverloads constructor(
     private val shapeType: Int
     private var rectangle: ArrayList<Rect>
     private lateinit var points: ArrayList<PointF>
+    private var  accessibilityHelper: AccessibilityHelper
 
     init {
 
@@ -60,20 +68,53 @@ class CustomCircles @JvmOverloads constructor(
         rectangle = arrayListOf()
         setUpPathPoint()
 
+        /*accessibility*/
+        isFocusable = true
+
+        accessibilityHelper = AccessibilityHelper(this)
+        /*associating accessibility helper class  with the custom view*/
+        ViewCompat.setAccessibilityDelegate(this,accessibilityHelper)
 
         if (isInEditMode) {
             setUpEditModeStatus()
+
         }
 ////
 
 
     }
+           // accessibility callback
 
-    private fun getPixelValueFromDp(value: Float): Float {
-        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,value,context.resources.displayMetrics)
+    //--------------------------
+    override fun dispatchHoverEvent(event: MotionEvent?): Boolean {
+       // return super.dispatchHoverEvent(event)
+        var eventMotion=super.dispatchHoverEvent(event)
+        event?.let {
+           eventMotion= accessibilityHelper.dispatchHoverEvent(it)
+        }
+        return eventMotion
     }
 
+    override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
+        //return super.dispatchKeyEvent(event)
+        var key= super.dispatchKeyEvent(event)
+      event?.let{
+           key= accessibilityHelper.dispatchKeyEvent(it)
+        }
+       return key
+    }
 
+    override fun onFocusChanged(gainFocus: Boolean, direction: Int, previouslyFocusedRect: Rect?) {
+        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
+        accessibilityHelper.onFocusChanged(gainFocus,direction,previouslyFocusedRect)
+    }
+    // converting from dp to physical pixel
+    private fun getPixelValueFromDp(value: Float): Float {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,value,context.resources.displayMetrics)
+
+    }
+
+    //-----------------------------
     private fun setUpPathPoint() {
         val tetha =(2* PI).div(5)
 
@@ -138,6 +179,10 @@ class CustomCircles @JvmOverloads constructor(
         }else{
             moduleStatus[shapePos]=!moduleStatus[shapePos]
             invalidate()
+            // updating the accessibility state
+            accessibilityHelper.invalidateVirtualView(shapePos)
+            // sending notification about the click event to the accessibility system
+            accessibilityHelper.sendEventForVirtualView(shapePos,AccessibilityEvent.TYPE_VIEW_CLICKED)
         }
     }
 
@@ -256,5 +301,60 @@ class CustomCircles @JvmOverloads constructor(
         canvas.restore()
     }
 
+ inner class AccessibilityHelper(host: View) : ExploreByTouchHelper(host) {
+       override fun getVirtualViewAt(x: Float, y: Float): Int {
+          val id=findShapeAtPosition(x,y)
+           return if (id==-1){
+               INVALID_ID
+           } else id
+       }
 
+       override fun getVisibleVirtualViews(virtualViewIds: MutableList<Int>?) {
+           // getting virtual view id: this uniquely identify the virtual view to interact with
+              if (rectangle.isEmpty()){
+                  return
+              }
+           else{
+           for (i in 0 until rectangle.size)
+               virtualViewIds?.add(i)
+              }
+       }
+
+       override fun onPerformActionForVirtualView(
+           virtualViewId: Int,
+           action: Int,
+           arguments: Bundle?
+       ): Boolean {
+
+           // here we handle accessibility action
+           return when(action){
+               AccessibilityNodeInfoCompat.ACTION_CLICK ->{
+                   onModuleSelected(virtualViewId)
+                   true
+               }
+               else -> false
+           }
+       }
+
+       override fun onPopulateNodeForVirtualView(
+           virtualViewId: Int,
+           node: AccessibilityNodeInfoCompat
+       ) {
+          node.isFocusable=true
+           if (rectangle.isEmpty()){
+               return
+           } else{
+               node.setBoundsInParent(rectangle[virtualViewId])
+           }
+           //node.setBoundsInScreen(rectangle[virtualViewId])
+           node.contentDescription="module $virtualViewId"
+
+           node.isCheckable=true
+           node.isChecked=moduleStatus[virtualViewId]
+
+           // supporting the click action
+           node.addAction(AccessibilityNodeInfoCompat.AccessibilityActionCompat.ACTION_CLICK)
+       }
+
+   }
 }
